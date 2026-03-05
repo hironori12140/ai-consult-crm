@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AIコンサル案件管理 - 音声で更新</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="header-row">
+        <div>
+          <h1>AIコンサル案件管理</h1>
+          <p class="subtitle">表を見ながら話すだけで、自動で状況が更新されます</p>
+        </div>
+        <div class="header-buttons">
+          <button id="settingsBtn" class="btn btn-ghost btn-small" type="button" title="設定">⚙️ 設定</button>
+          <button id="aboutBtn" class="btn btn-ghost btn-small" type="button" title="仕組みについて">ℹ️ 仕組み</button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <!-- 音声入力エリア -->
+      <section class="voice-section">
+        <div class="voice-controls">
+          <button id="recordBtn" class="btn btn-primary" type="button">
+            <span class="icon">🎤</span>
+            <span class="text">話して更新</span>
+          </button>
+          <span id="recordStatus" class="status"></span>
+        </div>
+        <div class="transcript-area">
+          <div class="transcript-header">
+            <label>聞き取った内容：</label>
+            <button id="clearTranscriptBtn" class="btn btn-small btn-ghost" type="button">クリア</button>
+          </div>
+          <div id="transcript" class="transcript-box" contenteditable="true" placeholder="ここに音声が文字起こしされます。直接入力して解析することもできます。"></div>
+          <div class="parse-row">
+            <button id="parseBtn" class="btn btn-secondary" type="button">解析して更新</button>
+            <span id="parseMode" class="parse-mode"></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 案件テーブル -->
+      <section class="table-section">
+        <div class="table-header">
+          <h2>案件一覧</h2>
+          <div class="table-actions">
+            <button id="addBtn" class="btn btn-small" type="button">+ 新規追加</button>
+            <button id="exportCsvBtn" class="btn btn-small" type="button">CSV出力</button>
+            <button id="importCsvBtn" class="btn btn-small" type="button">CSV取り込み</button>
+            <input type="file" id="csvFileInput" accept=".csv" hidden>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table id="casesTable">
+            <thead>
+              <tr>
+                <th>会社名</th>
+                <th>ステータス</th>
+                <th>最終アクション</th>
+                <th>今後やるアクション</th>
+                <th>更新日時</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="casesBody">
+              <!-- データはJSで動的生成 -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <!-- 設定モーダル -->
+    <div id="settingsModal" class="modal hidden">
+      <div class="modal-content modal-wide">
+        <h3>設定</h3>
+        <div class="form-group">
+          <label>OpenAI API キー（任意）</label>
+          <input type="password" id="apiKeyInput" placeholder="sk-..." autocomplete="off">
+          <p class="form-hint">設定すると、AI（GPT）で高精度に解析します。未設定の場合はルールベースで解析します。キーはこのPCのブラウザにのみ保存されます。</p>
+        </div>
+        <div class="modal-actions">
+          <button id="cancelSettingsBtn" class="btn btn-secondary" type="button">キャンセル</button>
+          <button id="saveSettingsBtn" class="btn btn-primary" type="button">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 仕組みについてモーダル -->
+    <div id="aboutModal" class="modal hidden">
+      <div class="modal-content modal-wide">
+        <h3>このアプリの仕組み</h3>
+        <div class="about-content">
+          <h4>解析について</h4>
+          <p>OpenAI APIキーを設定している場合：<strong>GPT（AI）</strong>で高精度に解析します。未設定の場合は<strong>ルールベース</strong>で解析します。</p>
+          <h4>音声認識</h4>
+          <p>ブラウザの<strong>Web Speech API</strong>（Chrome等に標準搭載）で音声を文字に変換しています。マイクの音声はブラウザ内で処理され、外部サーバーには送信されません。</p>
+          <h4>データの保存</h4>
+          <p>案件データは<strong>お使いのPCのブラウザ（localStorage）</strong>にのみ保存されます。クラウドへは送信されません。</p>
+          <h4>セキュリティ</h4>
+          <p>・APIキー設定時：解析テキストのみOpenAIへ送信／・案件データはローカルのみ／・音声はブラウザ内で文字起こし</p>
+        </div>
+        <button id="closeAboutBtn" class="btn btn-primary" type="button">閉じる</button>
+      </div>
+    </div>
+
+    <!-- 新規追加モーダル -->
+    <div id="addModal" class="modal hidden">
+      <div class="modal-content">
+        <h3>新規案件追加</h3>
+        <div class="form-group">
+          <label>会社名</label>
+          <input type="text" id="newCompanyName" placeholder="例：株式会社〇〇">
+        </div>
+        <div class="form-group">
+          <label>ステータス</label>
+          <select id="newStatus">
+            <option value="営業中">営業中</option>
+            <option value="コンサル中">コンサル中</option>
+            <option value="アフターフォロー中">アフターフォロー中</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>最終アクション</label>
+          <input type="text" id="newLastAction" placeholder="例：提案書を送付">
+        </div>
+        <div class="form-group">
+          <label>今後やるアクション</label>
+          <input type="text" id="newNextAction" placeholder="例：来週打ち合わせ">
+        </div>
+        <div class="modal-actions">
+          <button id="cancelAddBtn" class="btn btn-secondary" type="button">キャンセル</button>
+          <button id="confirmAddBtn" class="btn btn-primary" type="button">追加</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
