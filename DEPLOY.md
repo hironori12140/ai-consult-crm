@@ -13,8 +13,8 @@
 ```bash
 cd c:\Users\hiron\Documents\GitHub\ai-consult-crm
 
-# リモートを追加（ユーザー名をあなたのGitHubユーザー名に変更）
-git remote add origin https://github.com/あなたのユーザー名/ai-consult-crm.git
+# リモートを追加
+git remote add origin https://github.com/hironori12140/ai-consult-crm.git
 
 # プッシュ
 git branch -M main
@@ -31,5 +31,5 @@ git push -u origin main
 
 デプロイ完了後（数分かかることがあります）:
 ```
-https://あなたのユーザー名.github.io/ai-consult-crm/
+https://hironori12140.github.io/ai-consult-crm/
 ```
